@@ -1,0 +1,83 @@
+<!--  --><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<video id="player" controls autoplay></video>
+<img id='ps_receiver'>
+
+<canvas id="snapshot" hidden='true'></canvas>
+{%for b in buttons.keys()%}
+<button>{{b}}</button>
+{% end %}
+<script>
+  var player = document.getElementById('player'); 
+  var snapshotCanvas = document.getElementById('snapshot');
+  var snapshotContext=snapshotCanvas.getContext('2d');
+  var playerWidth=320,playerHeight=200;
+  var ps_receiver=document.getElementById('ps_receiver')
+
+  var VideoModel = "Original"
+  const btns=document.querySelectorAll("button").forEach(item =>{
+    item.addEventListener('click',event=>{
+      VideoModel=item.textContent;
+    })
+  });
+  //获取camera尺寸
+  function getCameraSize(){
+    playerWidth=player.clientWidth;
+    playerHeight=player.clientHeight;
+    snapshotCanvas.width=playerWidth;
+    snapshotCanvas.height=playerHeight;
+  }
+
+  var handleSuccess = function(stream) {
+    player.srcObject = stream;
+    self.setTimeout("getCameraSize()",1000)//延时读取size
+  };
+ //绑定摄像头
+  navigator.mediaDevices.getUserMedia({video: true}).then(handleSuccess);
+
+  //建立xhr相应
+
+  let isSending=false;//是否正在发送AJAX
+  var xhr = new XMLHttpRequest();
+  setInterval(function(){
+    if(isSending)
+      return;
+    else{
+      xhr = new XMLHttpRequest();
+      isSending=true
+    }
+
+    //截图
+    snapshotContext.drawImage(player, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
+    //转成base64
+    var imgData = snapshotCanvas.toDataURL("image/png",1);
+
+    xhr.open('POST','http://127.0.0.1:8888/camera-process/');
+    xhr.send(JSON.stringify({
+      "ImgData":imgData,
+      "VideoModel":VideoModel,
+    }));
+    xhr.onreadystatechange = function(){
+      if(xhr.readyState===4){
+        if(xhr.status>=200&&xhr.status<300){
+          //处理服务器返回结果
+          ps_receiver.src=xhr.response
+          isSending=false
+          xhr.abort()
+        }
+      }
+    }
+  },8)
+  
+</script>
+
+</body>
+</html>

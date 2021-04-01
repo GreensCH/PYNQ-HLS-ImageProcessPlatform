@@ -1,0 +1,79 @@
+<!--  --><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<video id="player" controls autoplay></video>
+<img id='ps_receiver'>
+<button id="capture">Capture</button>
+<button id="start" value="start">start</button>
+<button id="load" value="load">load</button>
+<canvas id="snapshot" hidden='true'></canvas>
+<input id="test" id="clock" />
+<script>
+  var player = document.getElementById('player'); 
+  var snapshotCanvas = document.getElementById('snapshot');
+  var snapshotContext=snapshotCanvas.getContext('2d');
+  var playerWidth=320,playerHeight=200;
+  var ps_receiver=document.getElementById('ps_receiver')
+
+  var captureButton=document.getElementById('capture');
+  var startButton=document.getElementById('start');
+  var loadButton=document.getElementById('load');
+  //获取camera尺寸
+  function getCameraSize(){
+    playerWidth=player.clientWidth;
+    playerHeight=player.clientHeight;
+    snapshotCanvas.width=playerWidth;
+    snapshotCanvas.height=playerHeight;
+  }
+
+  var handleSuccess = function(stream) {
+    player.srcObject = stream;
+    self.setTimeout("getCameraSize()",1000)//延时读取size
+  };
+ //绑定摄像头
+  navigator.mediaDevices.getUserMedia({video: true}).then(handleSuccess);
+  //测试按键
+  captureButton.addEventListener('click', function() {
+    snapshotContext.drawImage(player, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
+  });
+  //截取图片并上传服务器
+  startButton.onclick = function(){
+    var imgData = snapshotCanvas.toDataURL("image/png",0.5);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST','http://127.0.0.1:8888/camera-process/');
+    xhr.send(JSON.stringify({"imgData":imgData}));
+    xhr.onreadystatechange = function(){
+      if(xhr.readyState===4){
+        if(xhr.status>=200&&xhr.status<300){
+          //处理服务器返回结果
+          console.log(imgData)
+          ps_receiver.src=imgData
+        }
+      }
+    }
+  }
+  // setInterval(function(){
+  //   var imgData = snapshotCanvas.toDataURL("image/png",0.5);
+  //   const xhr = new XMLHttpRequest();
+  //   xhr.open('POST','http://127.0.0.1:8888/camera-process/');
+  //   xhr.send(JSON.stringify({"imgData":imgData}));
+  //   xhr.onreadystatechange = function(){
+  //     if(xhr.readyState===4){
+  //       if(xhr.status>=200&&xhr.status<300){
+  //         //处理服务器返回结果
+  //         ps_receiver.src=imgData
+  //       }
+  //     }
+  //   }
+  // },25)
+</script>
+
+</body>
+</html>
