@@ -1,4 +1,4 @@
 # PYNQ-HLS-ImageProcessPlatform
 
 
-  This is a development branch . You should make a branch for your to program in from this branch . After that you should push your code , ande switch this to merge.
+  This is a master branch do not change ,until you think it can be launch for next generation .
