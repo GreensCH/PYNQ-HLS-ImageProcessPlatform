@@ -4,8 +4,8 @@ from urls import settings
 
 
 class HttpServer(tornado.web.Application):
-    def __init__(self, port=8888):
-        self.listen(port)
+    def __init__(self, port=8080):
+        self.listen(port,address="127.0.0.1")
         tornado.web.Application.__init__(self, **settings)
 
     def start(self):
