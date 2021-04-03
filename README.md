@@ -2,4 +2,4 @@
 
 
 
-  This is a master branch do not change ,until you think it can be launch for next generation .
+    This is a development branch on zynq side . Zynq changes including tornado net-config , pynq-function , etc . 
