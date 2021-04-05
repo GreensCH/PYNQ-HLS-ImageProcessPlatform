@@ -1,8 +1,7 @@
 from views import *
 import os
 
-
-url_home = 'http://127.0.0.1:8080'
+url_home = 'https://192.168.0.100:8080'
 
 settings={
     'handlers':[
