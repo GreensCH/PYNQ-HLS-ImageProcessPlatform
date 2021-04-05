@@ -60,7 +60,7 @@
     //转成base64
     var imgData = snapshotCanvas.toDataURL("image/png",1);
 
-    xhr.open('POST','https://192.168.0.100:8080/camera-process/');
+    xhr.open('POST',"{{url_home}}"+"/camera-process/");
     xhr.send(JSON.stringify({
       "ImgData":imgData,
       "VideoModel":VideoModel,

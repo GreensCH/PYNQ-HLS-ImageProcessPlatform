@@ -1,5 +1,3 @@
-# PYNQ-HLS-ImageProcessPlatform
+PYNQ-HLS-ImageProcessPlatform
 
-
-
-    This is a development branch on zynq side . Zynq changes including tornado net-config , pynq-function , etc . 
+This is a development branch on computer side . Use this branch to build and debug web-server .
