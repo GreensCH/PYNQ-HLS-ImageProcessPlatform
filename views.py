@@ -4,6 +4,7 @@ from tornado import gen
 import uuid
 import os
 
+import urls
 from utils import ImageBase64Cache as imb64_cache
 from utils import PsImageHandler as ps
 
@@ -35,7 +36,9 @@ class DisplayImagesHandle(tornado.web.RequestHandler):
 
 class CameraHandle(tornado.web.RequestHandler):
     def get(self, *args, **kwarg):
-        self.render('camera.html',buttons=camera_methods)#渲染按键
+        self.render('camera.html',
+        url_home = urls.url_home,
+        buttons=camera_methods)#渲染按键
 
 class CameraBackgroundHandle(tornado.web.RequestHandler):
     def get(self, *args, **kwarg):
