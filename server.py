@@ -11,7 +11,7 @@ app =tornado.web.Application(
 
 server = httpserver.HTTPServer(app, ssl_options={
         "certfile": os.path.join(os.path.abspath("."), "static/ssl/server.crt"),
-        "keyfile": os.path.join(os.path.abspath("."), "static/ssl/server.key"),
+        "keyfile": os.path.join(os.path.abspath("."), "static/ssl/server.key.unsecure"),
 })
 
 server.listen(8080)

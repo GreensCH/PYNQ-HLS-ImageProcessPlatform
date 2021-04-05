@@ -6,7 +6,7 @@ import numpy as np  # 用于mat读取
 import uuid
 import os
 
-DEFAULT_HEADER = 'data:image/png;base64,'
+DEFAULT_HEADER = 'data:image/jpg;base64,'
 
 
 def base642mat(base64_img):
@@ -16,7 +16,7 @@ def base642mat(base64_img):
 
 
 def fast_mat2base64(mat_img):
-    image = cv.imencode('.png', mat_img)[1]
+    image = cv.imencode('.jpg', mat_img)[1]
     return DEFAULT_HEADER + str(base64.b64encode(image))[2:-1]
 
 
