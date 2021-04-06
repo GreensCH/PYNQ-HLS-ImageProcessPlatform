@@ -10,7 +10,8 @@ from utils import PsImageHandler as ps
 
 temp_image_path = os.path.join('static', 'temp', 'images')  # static/temp/image
 camera_methods = {'Original':'get_matimage','Gray':'get_gray_matimage',
-                  'Gaussian':'get_gaussian_blur_matimage','Sobel':'get_sobel_filter'}
+                  'Gaussian':'get_gaussian_blur_matimage','Sobel':'get_sobel_filter',
+                  'Canny':'get_canny'}
 
 class DisplayImagesHandle(tornado.web.RequestHandler):
     def initialize(self, *args, **kwargs):
