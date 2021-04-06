@@ -48,6 +48,8 @@ class PsImageHandler():
     def get_resize(self):
         pass
 
+    def get_canny(self):
+        return cv.Canny(self.mat_img, 50,100),0
     # 被抛弃的方法
     # def download_gray_image(self, src_image_path):
     #     image = cv.imread(src_image_path, cv.IMREAD_UNCHANGED)

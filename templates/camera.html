@@ -58,7 +58,7 @@
     //截图
     snapshotContext.drawImage(player, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
     //转成base64
-    var imgData = snapshotCanvas.toDataURL("image/jpeg",0.2);
+    var imgData = snapshotCanvas.toDataURL("image/jpeg",1);
 
     xhr.open('POST',"{{url_home}}"+"/camera-process/");
     xhr.send(JSON.stringify({
