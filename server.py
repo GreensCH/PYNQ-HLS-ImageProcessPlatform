@@ -4,7 +4,6 @@ from tornado import httpserver
 from urls import settings
 import os
 
-
 app =tornado.web.Application(
     **settings
 )
