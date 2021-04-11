@@ -3,8 +3,78 @@ import os
 import time
 import cv2 as cv
 import numpy as np  # 用于mat读取
+from tornado import gen
+from tornado.concurrent import Future
+
+
+ps_methods =['Gray','Original','Gaussian',
+                 'Sobel','Canny']
+                #{'Gray':'get_gray_matimage'}# {'Original':'get_matimage','Gray':'get_gray_matimage',
+                  # 'Gaussian':'get_gaussian_blur_matimage','Sobel':'get_sobel_filter',
+                  # 'Canny':'get_canny'}
 
 #ps端图像处理对象,调用opencv库,默认内部mat
+@gen.coroutine
+def get_gray_matimage(mat_img):
+    future = Future()
+    gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
+    future.set_result(gray)
+    return future
+
+@gen.coroutine
+def get_gaussian_blur_matimage(mat_img):
+    future = Future()
+    gaussian = cv.GaussianBlur(mat_img, (9,9), 0)
+    future.set_result(gaussian)
+    return future
+
+
+
+sobel_kernal_x=np.array([
+    [-1,0,1],
+    [-2,0,2],
+    [-1,0,1]
+])
+sobel_kernal_y=np.array([
+    [-1,-2,-1],
+    [0,0,0],
+    [1,2,1]
+])
+@gen.coroutine
+def get_sobel_filter(mat_img):
+    future = Future()
+    gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
+    sobel_x = cv.filter2D(gray, -1, sobel_kernal_x)  # ddepth=-1表示相同深度
+    sobel_y = cv.filter2D(gray, -1, sobel_kernal_y)  # ddepth=-1表示相同深度
+    future.set_result(sobel_y+sobel_x)
+    return future
+
+def get_canny(mat_img):
+    future = Future()
+    canny = cv.Canny(mat_img, 50,100)
+    future.set_result(canny)
+    return future
+
+
+@gen.coroutine
+def get_ps_process(mat_img , mode):
+    if mode == ps_methods[0]:#gray
+        processed_future = yield get_gray_matimage(mat_img)
+    elif mode == ps_methods[1]:#original
+        processed_future = Future()
+        processed_future.set_result(mat_img)
+    elif mode == ps_methods[2]:#Gaussian
+        processed_future = yield get_gaussian_blur_matimage(mat_img)
+    elif mode == ps_methods[3]:#Sobel
+        processed_future = yield get_sobel_filter(mat_img)
+    elif mode == ps_methods[3]:#Canny
+        processed_future = yield get_canny(mat_img)
+    else:
+        processed_future = yield get_gray_matimage(mat_img)
+    return processed_future
+
+
+
 class PsImageHandler():
     sobel_kernal_x=np.array([
         [-1,0,1],
@@ -25,66 +95,55 @@ class PsImageHandler():
         cv.waitKey(0)
 
     def get_matimage(self):
-        return self.mat_img,0;
+        return self.mat_img;
 
+    @gen.coroutine
     def get_gray_matimage(self):
-        process_time = time.time()
+        future = Future()
         gray = cv.cvtColor(self.mat_img, cv.COLOR_BGR2GRAY)
-        process_time = time.time() - process_time
-        return gray,process_time
-
-
+        future.set_result(gray)
+        return future
 
     def get_gaussian_blur_matimage(self):
-        return cv.GaussianBlur(self.mat_img, (17,17), 0),0
+        return cv.GaussianBlur(self.mat_img, (17,17), 0)
 
     def get_sobel_filter(self):
-        process_time = time.time()
         gray = cv.cvtColor(self.mat_img, cv.COLOR_BGR2GRAY)
         sobel_x = cv.filter2D(gray, -1, self.sobel_kernal_x)  # ddepth=-1表示相同深度
         sobel_y = cv.filter2D(gray, -1, self.sobel_kernal_y)  # ddepth=-1表示相同深度
-        return sobel_y+sobel_x,(time.time() - process_time)
+        return sobel_y+sobel_x
 
     def get_resize(self):
         pass
 
     def get_canny(self):
-        return cv.Canny(self.mat_img, 50,100),0
-    # 被抛弃的方法
-    # def download_gray_image(self, src_image_path):
-    #     image = cv.imread(src_image_path, cv.IMREAD_UNCHANGED)
-    #     gray,time = self.get_gray_matimage()
-    #     outfilename = str(uuid.uuid4()) + os.path.splitext(src_image_path)[1]#保存文件名
-    #     outfiledir = os.path.split(src_image_path)[0] #保存目录(不带保存文件名)
-    #     out_image_path = outfiledir + os.path.sep + outfilename #保存路径
-    #     cv.imwrite(out_image_path, gray)
-    #     return out_image_path,time
-    #
+        return cv.Canny(self.mat_img, 50,100)
 
-if __name__ == '__main__':
-    img_file = cv.imread('../static/1.jpg')  # 二进制打开图片文件
-    gray = cv.cvtColor(img_file, cv.COLOR_BGR2GRAY)
-    kernal_x=np.array([
-        [-1,0,1],
-        [-2,0,2],
-        [-1,0,1]
-    ])
-    kernal_y=np.array([
-        [-1,-2,-1],
-        [0,0,0],
-        [1,2,1]
-    ])
-    sobel_x=cv.filter2D(gray,-1,kernal_x)#ddepth=-1表示相同深度
-    sobel_y=cv.filter2D(gray,-1,kernal_y)#ddepth=-1表示相同深度
-    cv.namedWindow("sobelx");
-    # cv.resizeWindow('sobelx',200,200)
-    cv.imshow('sobelx',sobel_x)
 
-    cv.namedWindow("sobely");
-    # cv.resizeWindow('sobelx',200,200)
-    cv.imshow('sobely',sobel_y)
+# if __name__ == '__main__':
+#     img_file = cv.imread('../static/1.jpg')  # 二进制打开图片文件
+#     gray = cv.cvtColor(img_file, cv.COLOR_BGR2GRAY)
+#     kernal_x=np.array([
+#         [-1,0,1],
+#         [-2,0,2],
+#         [-1,0,1]
+#     ])
+#     kernal_y=np.array([
+#         [-1,-2,-1],
+#         [0,0,0],
+#         [1,2,1]
+#     ])
+#     sobel_x=cv.filter2D(gray,-1,kernal_x)#ddepth=-1表示相同深度
+#     sobel_y=cv.filter2D(gray,-1,kernal_y)#ddepth=-1表示相同深度
+#     cv.namedWindow("sobelx");
+#     # cv.resizeWindow('sobelx',200,200)
+#     cv.imshow('sobelx',sobel_x)
 
-    cv.namedWindow("sobel");
-    # cv.resizeWindow('sobelx',200,200)
-    cv.imshow('sobel',sobel_x+sobel_y)
-    cv.waitKey(0)
+#     cv.namedWindow("sobely");
+#     # cv.resizeWindow('sobelx',200,200)
+#     cv.imshow('sobely',sobel_y)
+
+#     cv.namedWindow("sobel");
+#     # cv.resizeWindow('sobelx',200,200)
+#     cv.imshow('sobel',sobel_x+sobel_y)
+#     cv.waitKey(0)

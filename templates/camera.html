@@ -12,7 +12,7 @@
 <img id='ps_receiver'>
 <div id = 'time-delay'></div>
 <canvas id="snapshot" hidden='true'></canvas>
-{%for b in buttons.keys()%}
+{%for b in buttons%}
 <button>{{b}}</button>
 {% end %}
 <script>
@@ -57,7 +57,7 @@
 
   //接收消息，导入上一帧处理后的图片，并发送此次图像
   var start_flag=true;//截图上传标志
-  var time_threshold = 300;//0必会获取动态阈值
+  var time_threshold = -1;//0必会获取动态阈值
   var time_delay_time = 100;//动态延迟时间
   ws.onmessage = function (evt){
     // var ws_message = JSON.parse(evt.data);

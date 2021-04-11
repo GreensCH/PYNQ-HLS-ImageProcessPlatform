@@ -5,9 +5,7 @@ url_home = 'https://192.168.0.100:8080'
 ws_url_home = 'ws://192.168.0.100:8080'
 
 temp_image_path = os.path.join('static', 'temp', 'images')  # static/temp/image
-camera_methods = {'Original':'get_matimage','Gray':'get_gray_matimage',
-                  'Gaussian':'get_gaussian_blur_matimage','Sobel':'get_sobel_filter',
-                  'Canny':'get_canny'}
+
 
 settings={
     'handlers':[
