@@ -7,7 +7,6 @@
     <title>Document</title>
 </head>
 <body>
-<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <video id="player" controls autoplay></video>
 <img id='ps_receiver'>
 
@@ -23,9 +22,10 @@
   var ps_receiver=document.getElementById('ps_receiver')
 
   var VideoModel = "Original"
+  //绑定buttons事件
   const btns=document.querySelectorAll("button").forEach(item =>{
     item.addEventListener('click',event=>{
-      VideoModel=item.textContent;
+      mode_send(item.textContent);
     })
   });
   //获取camera尺寸
@@ -35,7 +35,7 @@
     snapshotCanvas.width=playerWidth;
     snapshotCanvas.height=playerHeight;
   }
-
+  //绑定media stream 到video 上
   var handleSuccess = function(stream) {
     player.srcObject = stream;
     self.setTimeout("getCameraSize()",1000)//延时读取size
@@ -43,39 +43,44 @@
  //绑定摄像头
   navigator.mediaDevices.getUserMedia({video: true}).then(handleSuccess);
 
-  //建立xhr相应
 
-  let isSending=false;//是否正在发送AJAX
-  var xhr = new XMLHttpRequest();
-  setInterval(function(){
-    if(isSending)
-      return;
-    else{
-      xhr = new XMLHttpRequest();
-      isSending=true
-    }
 
-    //截图
-    snapshotContext.drawImage(player, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
-    //转成base64
-    var imgData = snapshotCanvas.toDataURL("image/jpeg",1);
+  var ws = new WebSocket("{{ws_url_home}}"+"/camera-process/")
+    
+  class_send('PS')//标注为PS模式
+   
+  //建立websocket提
+  ws.onopen = function() {
+    console.log("建立连接")
+  }
 
-    xhr.open('POST',"{{url_home}}"+"/camera-process/");
-    xhr.send(JSON.stringify({
-      "ImgData":imgData,
-      "VideoModel":VideoModel,
-    }));
-    xhr.onreadystatechange = function(){
-      if(xhr.readyState===4){
-        if(xhr.status>=200&&xhr.status<300){
-          //处理服务器返回结果
-          ps_receiver.src=xhr.response
-          isSending=false
-          xhr.abort()
-        }
-      }
-    }
-  },8)
+  //接收消息，导入上一帧处理后的图片，并发送此次图像
+  ws.onmessage = function (evt){
+    ps_receiver.src=evt.data;    //接收上一帧处理后的图片
+    camera_send();    //camera数据发送
+  }
+  //关闭websocket提示
+  ws.onclose =function(p2){
+    console.log('正在关闭')
+  }
+   //camera数据发送
+  function camera_send(){
+    snapshotContext.drawImage(player, 0, 0, snapshotCanvas.width, snapshotCanvas.height);    //截图
+    var imgData = snapshotCanvas.toDataURL("image/jpeg",1);    //转成base64
+    ws.send(JSON.stringify({"ImgData":imgData}))
+  }
+  //button数据发送
+  function mode_send(mode){
+    ws.send(JSON.stringify({"VideoModel":mode}))
+  }
+  //ps选择发送
+  function class_send(ps_pl){
+    ws.send(JSON.stringify({"PSPL":ps_pl}))
+  }
+  //结束连接
+  function disconn(){
+    ws.close();
+  }
   
 </script>
 
