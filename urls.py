@@ -18,6 +18,5 @@ settings={
         (r'/camera-process/', CameraBackgroundHandle)#处理相应
     ],
     'template_path':os.path.join(os.getcwd(), 'templates'),
-    'static_path':os.path.join(os.getcwd(), 'static'),
-    'websocket_ping_interval' : camera_ws_ping_interval,
+    'static_path':os.path.join(os.getcwd(), 'static')
 }
