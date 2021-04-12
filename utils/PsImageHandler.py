@@ -49,10 +49,11 @@ def get_sobel_filter(mat_img):
     future.set_result(sobel_y+sobel_x)
     return future
 
+@gen.coroutine
 def get_canny(mat_img):
     future = Future()
-    canny = cv.Canny(mat_img, 50,100)
-    future.set_result(canny)
+    _canny = cv.Canny(mat_img, 50,100)
+    future.set_result(_canny)
     return future
 
 
@@ -67,7 +68,7 @@ def get_ps_process(mat_img , mode):
         processed_future = yield get_gaussian_blur_matimage(mat_img)
     elif mode == ps_methods[3]:#Sobel
         processed_future = yield get_sobel_filter(mat_img)
-    elif mode == ps_methods[3]:#Canny
+    elif mode == ps_methods[4]:#Canny
         processed_future = yield get_canny(mat_img)
     else:
         processed_future = yield get_gray_matimage(mat_img)
