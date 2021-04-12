@@ -82,7 +82,7 @@
   }
 
   //16ms(29fps)发送图片
-  self.setInterval("camera_send()",16)
+  self.setInterval("camera_send()",50)
 
   //关闭websocket提示
   ws.onclose =function(p2){
@@ -99,6 +99,9 @@
       time_send_image=new Date().getTime()
       // console.log('start:'+time_send_image)
       start_flag=false;
+    }else{
+     if(new Date().getTime()-time_send_image>2000) 
+        start_flag=true;
     }
   }
   //button数据发送

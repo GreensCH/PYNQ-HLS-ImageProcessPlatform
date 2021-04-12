@@ -37,21 +37,23 @@ class CameraBackgroundHandle(tornado.websocket.WebSocketHandler):
         data = tornado.escape.json_decode(message)
         for s in data.keys():
             if s == 'VideoModel':
-                print(data[s])
-                if(data[s]!="PS" and data[s]!="PL"):
-                    self.video_model=data[s]
-                else:
+                if(data[s]=="PS"):
                     self.ps_pl=data[s]
+                    # pl.resetbitstream()
+                elif(data[s]=="PL"):
+                    self.ps_pl=data[s]
+                    # pl.loadbitstream()
+                else:
+                    self.video_model=data[s]
             elif s == 'ImgData':#处理图像
                 self.image64 = data[s]#缓存原图
                 # 实例化base64cache用于解析输入base64与缓存数据
                 imb64 = imb64_cache.ImageBase64Cache(base64_str=data[s])
                 if(self.ps_pl=='PL'):
-                    print('PL')
                     plt_image,height,width=pl.mat2plt(imb64.mat_img)
-                    processed_future=yield pl.get_pl_process(plt_image,self.video_model,height,width)
+                    processed_future= pl.get_pl_process(plt_image,self.video_model,height,width)
                     self.write_message(tornado.escape.json_encode({
-                        'ImgData':imb64_cache.fast_mat2base64(processed_future._result),
+                        'ImgData':imb64_cache.fast_mat2base64(processed_future),
                         'TimeDelay':self.delay_time,
                         'TimeThreshold':self.time_threshold,
                     }))
