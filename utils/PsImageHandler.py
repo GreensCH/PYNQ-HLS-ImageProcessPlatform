@@ -44,8 +44,8 @@ sobel_kernal_y=np.array([
 def get_sobel_filter(mat_img):
     future = Future()
     gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
-    sobel_x = cv.filter2D(gray, -1, sobel_kernal_x)  # ddepth=-1表示相同深度
-    sobel_y = cv.filter2D(gray, -1, sobel_kernal_y)  # ddepth=-1表示相同深度
+    sobel_x = cv.filter2D(mat_img, -1, sobel_kernal_x)  # ddepth=-1表示相同深度
+    sobel_y = cv.filter2D(mat_img, -1, sobel_kernal_y)  # ddepth=-1表示相同深度
     future.set_result(sobel_y+sobel_x)
     return future
 

@@ -12,7 +12,7 @@ from utils import PsImageHandler as ps
 import utils.PlImageHandler as pl
 import cv2 as cv
 
-CameraButton = ['PS','PL','Gray','Original','Gaussian',
+CameraButton = ['PS','PL','VDMA-STOP','Gray','Original','Gaussian',
                  'Sobel','Canny']
 
 class CameraHandle(tornado.web.RequestHandler):
@@ -39,10 +39,12 @@ class CameraBackgroundHandle(tornado.websocket.WebSocketHandler):
             if s == 'VideoModel':
                 if(data[s]=="PS"):
                     self.ps_pl=data[s]
-                    # pl.resetbitstream()
                 elif(data[s]=="PL"):
                     self.ps_pl=data[s]
-                    # pl.loadbitstream()
+                    pl.loadbitstream()
+                elif(data[s]=="VDMA-STOP"):
+                    self.ps_pl="PS"
+                    pl.resetbitstream()
                 else:
                     self.video_model=data[s]
             elif s == 'ImgData':#处理图像
@@ -51,9 +53,9 @@ class CameraBackgroundHandle(tornado.websocket.WebSocketHandler):
                 imb64 = imb64_cache.ImageBase64Cache(base64_str=data[s])
                 if(self.ps_pl=='PL'):
                     plt_image,height,width=pl.mat2plt(imb64.mat_img)
-                    processed_future= pl.get_pl_process(plt_image,self.video_model,height,width)
+                    processed_future = yield pl.get_pl_process(plt_image,self.video_model,height,width)
                     self.write_message(tornado.escape.json_encode({
-                        'ImgData':imb64_cache.fast_mat2base64(processed_future),
+                        'ImgData':imb64_cache.fast_mat2base64(processed_future._result),
                         'TimeDelay':self.delay_time,
                         'TimeThreshold':self.time_threshold,
                     }))
