@@ -21,6 +21,18 @@ class CameraHandle(tornado.web.RequestHandler):
         ws_url_home = urls.ws_url_home,
         buttons=CameraButton)#渲染按键
 
+# class VideoBackgroundHandle(tornado.websocket.WebSocketHandler):
+#     def open(self, *args, **kwargs):
+#        print('connected')
+#        self.image64=''
+#        self.out_image64=''
+#        self.video_model=ps.ps_methods[0]#Refence to ps.ps_method
+#        self.ps_pl='PS'#PS,PL
+#        self.time_threshold = 500 #动态负载阈值
+#        self.delay_time=50 #动态负载延迟
+
+
+
 class CameraBackgroundHandle(tornado.websocket.WebSocketHandler):
     def open(self, *args, **kwargs):
        print('connected')
@@ -41,10 +53,10 @@ class CameraBackgroundHandle(tornado.websocket.WebSocketHandler):
                     self.ps_pl=data[s]
                 elif(data[s]=="PL"):
                     self.ps_pl=data[s]
-                    pl.loadbitstream()
+                    # pl.loadbitstream()
                 elif(data[s]=="VDMA-STOP"):
                     self.ps_pl="PS"
-                    pl.resetbitstream()
+                    # pl.resetbitstream()
                 else:
                     self.video_model=data[s]
             elif s == 'ImgData':#处理图像

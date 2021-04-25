@@ -7,7 +7,7 @@ from tornado import gen
 from tornado.concurrent import Future
 
 
-ps_methods =['Gray','Original','Gaussian',
+ps_methods =['Gray','Original','Gaussian','Sharpen',
                  'Sobel','Canny']
                 #{'Gray':'get_gray_matimage'}# {'Original':'get_matimage','Gray':'get_gray_matimage',
                   # 'Gaussian':'get_gaussian_blur_matimage','Sobel':'get_sobel_filter',
@@ -52,7 +52,7 @@ def get_sobel_filter(mat_img):
 @gen.coroutine
 def get_canny(mat_img):
     future = Future()
-    _canny = cv.Canny(mat_img, 50,100)
+    _canny = cv.Canny(mat_img, 50,80)
     future.set_result(_canny)
     return future
 
