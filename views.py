@@ -26,28 +26,21 @@ class DisplayImagesHandle(tornado.web.RequestHandler):
             self.send_error(403)
         original_image_path = os.path.join(urls.temp_image_path, file_name)  # static/temp/image/filename
         
-        # mat_buf = cv.imread(original_image_path)#原图的Mat实例
-        # plt_image,width,height=pl.mat2plt(mat_buf)
         
-        mat_buf = cv.imread(original_image_path,cv.IMREAD_UNCHANGED)
-        #测试用Ipl格式原图
-        original_plt_image = Image.open(original_image_path)
-        #Mat转PLT
-        plt_image = Image.fromarray(cv.cvtColor(mat_buf,cv.COLOR_BGR2RGB))
-        #通道变化
-        rgba_plt_image=plt_image.convert('RGBA')
-        #获取高度宽度
-        width, height = plt_image.size
 
-        ps_result,ps_time=ps.nogen_get_ps_process(mat_buf,picture_mode)
+        mat_buf = cv.imread(original_image_path)#原图的Mat实例
+        plt_image,width,height=pl.mat2plt(mat_buf)
 
+        #pl端处理
         pl.modify_size_pl_image_processor(height=height,width=width)
-        print(pl.get_pl_mode())
+        print('Picture Process App:'+picture_mode)
         pl.modify_pl_image_processor(picture_mode)
-        args =[rgba_plt_image,picture_mode,height,width]
+        args =[plt_image,picture_mode,height,width]
         newTask=thread_pool.submit(lambda p: pl.get_pl_process(*p),args)
         pl_result = yield newTask
         pl_result = yield pl_result
+        #ps端处理
+        ps_result,ps_time=ps.nogen_get_ps_process(mat_buf,picture_mode)
 
         # pl_result = yield camera_view_image_processor(plt_image,picture_mode,height,width)
         # pl_result,pl_time=pl.nogen_get_pl_process(plt_image,picture_mode,height,width)

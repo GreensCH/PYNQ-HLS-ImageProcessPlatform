@@ -41,7 +41,7 @@ class my_canny:
 
         self.height=height
         self.width=width
-        self.image_process_vdma.readchannel.mode=VideoMode(width,height,24)
+        self.image_process_vdma.readchannel.mode=VideoMode(width,height,32)
         self.image_process_vdma.readchannel.start()
         self.image_process_vdma.writechannel.mode=VideoMode(width,height,32)
         self.image_process_vdma.writechannel.start()
@@ -103,7 +103,7 @@ class my_image_processor:
         self.image_process_vdma.writechannel.start()
         self.image_frame = self.image_process_vdma.writechannel.newframe()
 
-        self.medianblur_process_vdma.readchannel.mode=VideoMode(width,height,24)
+        self.medianblur_process_vdma.readchannel.mode=VideoMode(width,height,32)
         self.medianblur_process_vdma.readchannel.start()
         self.medianblur_process_vdma.writechannel.mode=VideoMode(width,height,32)
         self.medianblur_process_vdma.writechannel.start()
@@ -125,21 +125,7 @@ class my_image_processor:
         self.mode=mode
         self.image_process_ip.write(0x10,mode)
 
-    def modify_median_size(self,height,width):
-        del self.medianblur_frame
-        self.medianblur_process_vdma.readchannel.mode=VideoMode(width,height,24)
-        self.medianblur_process_vdma.readchannel.start()
-        self.medianblur_process_vdma.writechannel.mode=VideoMode(width,height,32)
-        self.medianblur_process_vdma.writechannel.start()
-        self.medianblur_frame = self.medianblur_process_vdma.writechannel.newframe()
-        self.medianblur_process_ip.write(0x18,height)
-        self.medianblur_process_ip.write(0x20,width) 
-
-    def modify_size(self,height=480,width=640):
-        # print("modify_size：height %d width %d"%(height,width))
-        self.height=height
-        self.width=width
-        del self.image_frame
+    def _modify_imgprocess_size(self,height,width):
         self.medianblur_process_ip.write(0x00,0x81)
         self.image_process_ip.write(0x20,width)
         self.image_process_ip.write(0x18,height)
@@ -147,17 +133,48 @@ class my_image_processor:
         self.image_process_vdma.readchannel.start()
         self.image_process_vdma.writechannel.mode=VideoMode(width,height,32)
         self.image_process_vdma.writechannel.start()
-        self.image_frame = self.image_process_vdma.writechannel.newframe()
- 
-        del self.medianblur_frame
-        self.medianblur_process_ip.write(0x00,0x81)
-        self.medianblur_process_ip.write(0x18,height)
-        self.medianblur_process_ip.write(0x20,width)  
-        self.medianblur_process_vdma.readchannel.mode=VideoMode(width,height,24)
+        
+    def _modify_median_size(self,height,width):
+        self.medianblur_process_vdma.readchannel.mode=VideoMode(width,height,32)
         self.medianblur_process_vdma.readchannel.start()
         self.medianblur_process_vdma.writechannel.mode=VideoMode(width,height,32)
         self.medianblur_process_vdma.writechannel.start()
         self.medianblur_frame = self.medianblur_process_vdma.writechannel.newframe()
+        self.medianblur_process_ip.write(0x18,height)
+        self.medianblur_process_ip.write(0x20,width) 
+        
+
+    def modify_size(self,height=480,width=640):
+        # print("modify_size：height %d width %d"%(height,width))
+        self.height=height
+        self.width=width
+        del self.image_frame
+        self._modify_imgprocess_size(height,width)
+        self.image_frame = self.image_process_vdma.writechannel.newframe()
+
+        del self.medianblur_frame
+        self._modify_median_size(height,width)
+        self.medianblur_frame = self.medianblur_process_vdma.writechannel.newframe()
+
+        # del self.image_frame
+        # self.medianblur_process_ip.write(0x00,0x81)
+        # self.image_process_ip.write(0x20,width)
+        # self.image_process_ip.write(0x18,height)
+        # self.image_process_vdma.readchannel.mode=VideoMode(width,height,32)
+        # self.image_process_vdma.readchannel.start()
+        # self.image_process_vdma.writechannel.mode=VideoMode(width,height,32)
+        # self.image_process_vdma.writechannel.start()
+        # self.image_frame = self.image_process_vdma.writechannel.newframe()
+ 
+        # del self.medianblur_frame
+        # self.medianblur_process_ip.write(0x00,0x81)
+        # self.medianblur_process_ip.write(0x18,height)
+        # self.medianblur_process_ip.write(0x20,width)  
+        # self.medianblur_process_vdma.readchannel.mode=VideoMode(width,height,32)
+        # self.medianblur_process_vdma.readchannel.start()
+        # self.medianblur_process_vdma.writechannel.mode=VideoMode(width,height,32)
+        # self.medianblur_process_vdma.writechannel.start()
+        # self.medianblur_frame = self.medianblur_process_vdma.writechannel.newframe()
 
     def nogen_median_write_read(self,plt_image):
         self.medianblur_frame[:]=plt_image#np.array(plt_image)#original_plt_image#np.array(original_image)
@@ -203,7 +220,7 @@ class my_image_processor:
 
 canny_path = os.path.join(os.path.abspath("."),'utils','bitstream_files','Canny_1.bit')
 # image_processor_path = os.path.join(os.path.abspath("."),'utils','bitstream_files','image_processor_v1.bit')
-image_processor_path = os.path.join('/home/xilinx/jupyter_notebooks/app/PYNQ-HLS-ImageProcessPlatform','utils','bitstream_files','HLSImageProcessor_3.bit')
+image_processor_path = os.path.join('/home/xilinx/jupyter_notebooks/app/PYNQ-HLS-ImageProcessPlatform','utils','bitstream_files','HLSImageProcessor_5.bit')
 # image_processor_path = os.path.join(os.path.abspath("."),'utils','bitstream_files','HLSImageProcessor_2.bit')
 # print(canny_path)
 # test_path=os.path.join(os.path.abspath("."),'bitstream_files','Canny_1.bit')
