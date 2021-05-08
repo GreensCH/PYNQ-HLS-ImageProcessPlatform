@@ -9,7 +9,12 @@
 <!--multipart/form-data表示保留原来数据，不进行处理-->
     <form action="/upload/" method="post" enctype="multipart/form-data">
         <input type="file" name="img">
-        <input type="submit" value="图片上传">
+        {%for b in picture_process_buttons%}
+        <input type="submit" name="picturemode"  value={{b}}>
+        {% end %}
+        <!-- <input type="submit" value="图片上传"> -->
     </form>
+
+
 </body>
 </html>

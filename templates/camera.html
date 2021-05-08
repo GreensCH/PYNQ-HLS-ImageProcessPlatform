@@ -5,23 +5,206 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-    <title>Document</title>
+    <title>Camera Image Processor</title>
 </head>
 <body>
-<video id="player" controls autoplay></video>
-<img id='ps_receiver'>
-<div id = 'time-delay'></div>
+  <!-- 自适应video及镜像翻转 -->
+<video id="player"  controls autoplay></video>
+<img id='ps_receiver'  controls autoplay>
+<!-- <video id="player" style="transform:rotateY(180deg);" controls autoplay></video>
+<img id='ps_receiver' style="transform:rotateY(180deg);" controls autoplay> -->
+<div id = 'timedelay'></div>
 <canvas id="snapshot" hidden='true'></canvas>
+<h2 id='modeselector'>ModeSelector:PS-Gray</h2>
 {%for b in buttons%}
 <button>{{b}}</button>
 {% end %}
+
+{%for b in ps_buttons%}
+<button>PS-{{b}}</button>
+{% end %}
+{%for b in pl_buttons%}
+<button>PL-{{b}}</button>
+{% end %}
+
+Video:
+<select name="" id="video">
+</select>
+
+<select name="" id="audio" hidden="true">  
+</select>
+
+<script>
+
+const localVideo = document.querySelector('video');
+var videoSelect = document.querySelector('select#video');
+var audioSelect = document.querySelector('select#audio');
+
+var selectorText = document.getElementById('modeselector');
+var player = document.getElementById('player');
+var snapshotCanvas = document.getElementById('snapshot');
+
+let localStream;
+let constraint;
+
+function getDevices(){
+	return navigator.mediaDevices.enumerateDevices()
+}
+
+function gotDevices(devices){
+  let cameraCounter=0;
+	devices.forEach(function(device){
+		if(device['kind'] == 'audioinput'){
+			let opt = document.createElement('option');
+			opt.value = device['deviceId'];
+			opt.innerText = device['label'];
+			audioSelect.appendChild(opt);
+		}else if(device['kind'] == 'videoinput'){
+      cameraCounter+=1;
+			let opt = document.createElement('option');
+			opt.value = device['deviceId'];
+			opt.innerText ="Camera"+cameraCounter.toString();// device['label'];
+			videoSelect.appendChild(opt);
+		}
+	})
+	changeConstraint();
+}
+
+function changeConstraint(){
+	constraint = {video: {deviceId: videoSelect.value}, audio: false};
+	getMedia(constraint);
+}
+  //获取camera尺寸
+  function getCameraSize(){
+    snapshotCanvas.width=player.clientWidth;
+    snapshotCanvas.height=player.clientHeight;
+  }
+  
+function gotLocalMediaStream(mediaStream) {
+  localStream = mediaStream;
+  localVideo.srcObject = mediaStream;
+  self.setTimeout("getCameraSize()",1000)//延时读取size
+}
+
+function getMedia(mediaStreamConstraints){
+	// 这里是重点，必须要先停止才可以
+	if(localStream){
+		localStream.getVideoTracks()[0].stop();
+	}
+	navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
+	  .then(gotLocalMediaStream).catch(handleLocalMediaStreamError);
+}
+
+function handleLocalMediaStreamError(error) {
+  console.log('navigator.getUserMedia error: ', error);
+}
+
+getDevices().then(gotDevices)
+
+audioSelect.onchange=changeConstraint;
+videoSelect.onchange=changeConstraint;
+
+</script>
+
 <script>
   var player = document.getElementById('player');
   var snapshotCanvas = document.getElementById('snapshot');
   var snapshotContext=snapshotCanvas.getContext('2d');
   var playerWidth=320,playerHeight=200;
   var ps_receiver=document.getElementById('ps_receiver')
-  var time_delay_text=document.getElementById('time-delay')
+  var time_delay_text=document.getElementById('timedelay')
+  //初始化
+  var VideoModel = "Original"
+  //绑定buttons事件
+  const btns=document.querySelectorAll("button").forEach(item =>{
+    item.addEventListener('click',event=>{
+      console.log(selectorText.innerHTML)
+      console.log(selectorText.innerText)
+      // innerHTML
+      selectorText.innerText='ModeSelector:'+item.textContent;//'ModeSelector:'
+      mode_send(item.textContent);
+    })
+  });
+
+  var ws = new WebSocket("{{ws_url_home}}"+"/camera-process/")
+
+  //建立websocket提
+  ws.onopen = function() {
+    console.log("建立连接")
+    mode_send('PS')//标注为PS模式
+  }
+
+  //接收消息，导入上一帧处理后的图片，并发送此次图像
+  var start_flag=true;//截图上传标志
+  var time_threshold = -1;//0必会获取动态阈值
+  var time_delay_time = 100;//动态延迟时间
+  ws.onmessage = function (evt){
+    // var ws_message = JSON.parse(evt.data);
+    json_message = JSON.parse(evt.data);//json提取
+    time_threshold = json_message['TimeThreshold'];
+    time_delay_time = json_message['TimeDelay'];
+    ps_receiver.src=json_message['ImgData'];    //接收上一帧处理后的图片
+
+    time_delay_text.innerText=new Date().getTime()-time_send_image;//计算周期
+
+    start_flag=true;//启动传输
+    if(time_delay_text.innerText>time_threshold){//如果延迟大于预设
+      timeout_send(time_delay_text.innerText);//上传负载数据
+      start_flag=false;//暂停传输
+      setTimeout(function(){//设置延迟
+          start_flag=true;
+      },time_delay_time);
+      console.log('开始调整 delay:'+time_delay_time + ' threshold :' + time_threshold);
+    }else{//否则继续
+      start_flag=true;
+    }
+  }
+  //16ms(29fps)发送图片
+  self.setInterval("camera_send()",50)
+  //关闭websocket提示
+  ws.onclose =function(p2){
+    console.log('正在关闭')
+  }
+   //camera数据发送
+   var time_send_image = 0;
+  function camera_send(){
+    if(start_flag)
+    {
+      snapshotContext.drawImage(player, 0, 0, snapshotCanvas.width, snapshotCanvas.height);    //截图
+      var imgData = snapshotCanvas.toDataURL("image/jpeg",0.25);    //转成base64
+      ws.send(JSON.stringify({"ImgData":imgData}))
+      time_send_image=new Date().getTime()
+      // console.log('start:'+time_send_image)
+      start_flag=false;
+    }else{
+    //  if(new Date().getTime()-time_send_image>2000) 
+    //     start_flag=true;
+    }
+  }
+  //button数据发送
+  function mode_send(mode){
+    ws.send(JSON.stringify({"VideoModel":mode}))
+  }
+  //Timeout发送
+  function timeout_send(timeout){
+    ws.send(JSON.stringify({"Timeout":timeout}))
+  }
+  //结束连接
+  function disconn(){
+    ws.close();
+  }
+  
+</script>
+
+
+
+<!-- <script>
+  var player = document.getElementById('player');
+  var snapshotCanvas = document.getElementById('snapshot');
+  var snapshotContext=snapshotCanvas.getContext('2d');
+  var playerWidth=320,playerHeight=200;
+  var ps_receiver=document.getElementById('ps_receiver')
+  var time_delay_text=document.getElementById('timedelay')
   //初始化
   var VideoModel = "Original"
   //绑定buttons事件
@@ -38,12 +221,22 @@
     snapshotCanvas.height=playerHeight;
   }
   //绑定media stream 到video 上
-  var handleSuccess = function(stream) {
-    player.srcObject = stream;
-    self.setTimeout("getCameraSize()",1000)//延时读取size
-  };
+  // var handleSuccess = function(stream) {
+  //   player.srcObject = stream;
+  //   self.setTimeout("getCameraSize()",1000)//延时读取size
+  // };
  //绑定摄像头
-  navigator.mediaDevices.getUserMedia({video: true}).then(handleSuccess);
+//  navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+//     window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+
+
+
+// navigator.mediaDevices.getUserMedia({'video': { facingMode: { exact: "user" } } }).then(handleSuccess);
+  
+
+  // navigator.mediaDevices.getUserMedia({'video': { facingMode: { exact: "user" } } }).then(handleSuccess);
+  // navigator.mediaDevices.getUserMedia({video: true}).then(handleSuccess);
+
 
 
   var ws = new WebSocket("{{ws_url_home}}"+"/camera-process/")
@@ -94,7 +287,7 @@
     if(start_flag)
     {
       snapshotContext.drawImage(player, 0, 0, snapshotCanvas.width, snapshotCanvas.height);    //截图
-      var imgData = snapshotCanvas.toDataURL("image/jpeg",1);    //转成base64
+      var imgData = snapshotCanvas.toDataURL("image/jpeg",0.25);    //转成base64
       ws.send(JSON.stringify({"ImgData":imgData}))
       time_send_image=new Date().getTime()
       // console.log('start:'+time_send_image)
@@ -117,7 +310,6 @@
     ws.close();
   }
   
-</script>
-
+</script> -->
 </body>
 </html>

@@ -5,28 +5,14 @@ import cv2 as cv
 import numpy as np  # 用于mat读取
 from tornado import gen
 from tornado.concurrent import Future
+from tornado.gen import Return
 
-
-ps_methods =['Gray','Original','Gaussian','Sharpen',
-                 'Sobel','Canny']
+ps_methods = ['Gray','Original','Gaussian','Sharpen','Dilate','Erode',
+                 'Sobel','Canny','Negative','Median']
                 #{'Gray':'get_gray_matimage'}# {'Original':'get_matimage','Gray':'get_gray_matimage',
                   # 'Gaussian':'get_gaussian_blur_matimage','Sobel':'get_sobel_filter',
                   # 'Canny':'get_canny'}
 
-#ps端图像处理对象,调用opencv库,默认内部mat
-@gen.coroutine
-def get_gray_matimage(mat_img):
-    future = Future()
-    gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
-    future.set_result(gray)
-    return future
-
-@gen.coroutine
-def get_gaussian_blur_matimage(mat_img):
-    future = Future()
-    gaussian = cv.GaussianBlur(mat_img, (9,9), 0)
-    future.set_result(gaussian)
-    return future
 
 
 
@@ -40,40 +26,168 @@ sobel_kernal_y=np.array([
     [0,0,0],
     [1,2,1]
 ])
+laplace_kernal=np.array([
+    [0,-1,0],
+    [-1,5,-1],
+    [0,-1,0]
+])
+#ps端图像处理对象,调用opencv库,默认内部mat
+@gen.coroutine
+def get_gray_matimage(mat_img):
+    gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
+    raise Return(gray)
+
+@gen.coroutine
+def get_gaussian_blur_matimage(mat_img):
+    gaussian = cv.GaussianBlur(mat_img, (9,9), 0)
+    raise Return(gaussian)
 @gen.coroutine
 def get_sobel_filter(mat_img):
-    future = Future()
     gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
     sobel_x = cv.filter2D(mat_img, -1, sobel_kernal_x)  # ddepth=-1表示相同深度
     sobel_y = cv.filter2D(mat_img, -1, sobel_kernal_y)  # ddepth=-1表示相同深度
-    future.set_result(sobel_y+sobel_x)
-    return future
+    raise Return(sobel_y+sobel_x)
+@gen.coroutine
+def get_sharpen_filter(mat_img):
+    # gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
+    _sharpen = cv.filter2D(mat_img, -1, laplace_kernal)  # ddepth=-1表示相同深度
+    raise Return(_sharpen)
 
 @gen.coroutine
 def get_canny(mat_img):
-    future = Future()
     _canny = cv.Canny(mat_img, 50,80)
-    future.set_result(_canny)
-    return future
+    raise Return(_canny)
 
+@gen.coroutine
+def get_erode(mat_img):
+    _erosion = cv.erode(mat_img,np.ones((5,5),np.uint8),iterations = 1)
+    raise Return(_erosion)
+
+@gen.coroutine
+def get_dilate(mat_img):
+    _dilate = cv.dilate(mat_img,np.ones((5,5),np.uint8),iterations = 1)
+    raise Return(_dilate)
+
+@gen.coroutine
+def get_median(mat_img):
+    _median = cv.medianBlur(mat_img,5)
+    raise Return(_median)
+
+@gen.coroutine
+def get_negative(mat_img):
+    b,g,r=cv.split(mat_img)
+    b2=255-b
+    g2=255-g
+    r2=255-r
+    raise Return([b2,g2,r2])
+    # raise Return(mat_img)
+
+@gen.coroutine
+def get_original(mat_img):
+    raise Return(mat_img)
 
 @gen.coroutine
 def get_ps_process(mat_img , mode):
-    if mode == ps_methods[0]:#gray
+    time.sleep(0.05)
+    if mode == 'Gray':#gray
         processed_future = yield get_gray_matimage(mat_img)
-    elif mode == ps_methods[1]:#original
-        processed_future = Future()
-        processed_future.set_result(mat_img)
-    elif mode == ps_methods[2]:#Gaussian
+    elif mode == 'Original':#original
+        processed_future = yield get_original(mat_img)
+    elif mode == 'Gaussian':#Gaussian
         processed_future = yield get_gaussian_blur_matimage(mat_img)
-    elif mode == ps_methods[3]:#Sobel
+    elif mode == 'Sharpen':
+        processed_future = yield get_sharpen_filter(mat_img)
+    elif mode == 'Sobel':#Sobel
         processed_future = yield get_sobel_filter(mat_img)
-    elif mode == ps_methods[4]:#Canny
+    elif mode == 'Canny':
         processed_future = yield get_canny(mat_img)
+    elif mode == 'Dilate':
+        processed_future = yield get_dilate(mat_img)
+    elif mode == 'Erode':
+        processed_future = yield get_erode(mat_img)
+    elif mode == 'Negative':
+        processed_future = yield get_negative(mat_img)
+    elif mode == 'Median':
+        processed_future = yield get_median(mat_img)
     else:
         processed_future = yield get_gray_matimage(mat_img)
     return processed_future
 
+
+
+
+#ps端图像处理对象,调用opencv库,默认内部mat
+def nogen_get_gray_matimage(mat_img):
+    gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
+    return gray
+
+def nogen_get_gaussian_blur_matimage(mat_img):
+    gaussian = cv.GaussianBlur(mat_img, (9,9), 0)
+    return gaussian
+
+def nogen_get_sobel_filter(mat_img):
+    gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
+    sobel_x = cv.filter2D(mat_img, -1, sobel_kernal_x)  # ddepth=-1表示相同深度
+    sobel_y = cv.filter2D(mat_img, -1, sobel_kernal_y)  # ddepth=-1表示相同深度
+    return sobel_y+sobel_x
+
+def nogen_get_sharpen_filter(mat_img):
+    # gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
+    _sharpen = cv.filter2D(mat_img, -1, laplace_kernal)  # ddepth=-1表示相同深度
+    return _sharpen
+
+def nogen_get_canny(mat_img):
+    _canny = cv.Canny(mat_img, 50,80)
+    return _canny
+
+def nogen_get_erode(mat_img):
+    _erosion = cv.erode(mat_img,np.ones((5,5),np.uint8),iterations = 1)
+    return _erosion
+
+def nogen_get_dilate(mat_img):
+    _dilate = cv.dilate(mat_img,np.ones((5,5),np.uint8),iterations = 1)
+    return _dilate
+
+def nogen_get_median(mat_img):
+    _median = cv.medianBlur(mat_img,5)
+    return _median
+
+def nogen_get_negative(mat_img):
+    b,g,r=cv.split(mat_img)
+    b=255-b
+    g=255-g
+    r=255-r
+    mat_img[:,:,0]=b
+    mat_img[:,:,1]=g
+    mat_img[:,:,2]=r
+    return mat_img
+
+def nogen_get_ps_process(mat_img , mode):
+    # time.sleep(0.05)
+    time_start=time.time()
+    if mode == 'Gray':#gray
+        processed_future = nogen_get_gray_matimage(mat_img)
+    elif mode == 'Original':#original
+        processed_future = mat_img
+    elif mode == 'Gaussian':#Gaussian
+        processed_future = nogen_get_gaussian_blur_matimage(mat_img)
+    elif mode == 'Sharpen':
+        processed_future = nogen_get_sharpen_filter(mat_img)
+    elif mode == 'Sobel':#Sobel
+        processed_future = nogen_get_sobel_filter(mat_img)
+    elif mode == 'Canny':
+        processed_future = nogen_get_canny(mat_img)
+    elif mode == 'Dilate':
+        processed_future = nogen_get_dilate(mat_img)
+    elif mode == 'Erode':
+        processed_future = nogen_get_erode(mat_img)
+    elif mode == 'Negative':
+        processed_future = nogen_get_negative(mat_img)
+    elif mode == 'Median':
+        processed_future = nogen_get_median(mat_img)
+    else:
+        processed_future = nogen_get_gray_matimage(mat_img)
+    return processed_future,time.time()-time_start
 
 
 class PsImageHandler():
@@ -109,10 +223,11 @@ class PsImageHandler():
         return cv.GaussianBlur(self.mat_img, (17,17), 0)
 
     def get_sobel_filter(self):
+        t0=time.time()
         gray = cv.cvtColor(self.mat_img, cv.COLOR_BGR2GRAY)
         sobel_x = cv.filter2D(gray, -1, self.sobel_kernal_x)  # ddepth=-1表示相同深度
         sobel_y = cv.filter2D(gray, -1, self.sobel_kernal_y)  # ddepth=-1表示相同深度
-        return sobel_y+sobel_x
+        return sobel_y+sobel_x,time.time()-t0
 
     def get_resize(self):
         pass
