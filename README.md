@@ -1,5 +1,4 @@
 # PYNQ-HLS-ImageProcessPlatform
 
 
-
-    This is a development branch on zynq side . Zynq changes including tornado net-config , pynq-function , etc . 
+程序启动命令    python3 server.py

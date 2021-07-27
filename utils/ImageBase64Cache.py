@@ -43,8 +43,10 @@ class ImageBase64Cache:
 
         self.base64_bytes_img = base64_bytes_img  # 保存base64源文件(bytes)
         # self.mat_img = base642mat(base64_bytes_img)  # base64转换为mat
-        self.mat_img = cv.resize(base642mat(base64_bytes_img),(480,640), interpolation = cv.INTER_NEAREST)
-
+        #下两行作用相同，但第一行强制变换宽高
+        # self.mat_img = cv.resize(base642mat(base64_bytes_img),(480,640), interpolation = cv.INTER_NEAREST)#
+        self.mat_img = base642mat(base64_bytes_img)#cv.resize(base642mat(base64_bytes_img),(480,640), interpolation = cv.INTER_NEAREST)
+    
     #利用捕捉的类型头编码
     def mat2base64_no_header(self):
         if ('PNG' in self.header):

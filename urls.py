@@ -18,3 +18,4 @@ settings={
     'template_path':os.path.join(os.getcwd(), 'templates'),
     'static_path':os.path.join(os.getcwd(), 'static')
 }
+print('Index URL:'+url_home+'/index/')
