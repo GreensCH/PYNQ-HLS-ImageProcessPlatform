@@ -42,7 +42,8 @@ class ImageBase64Cache:
             print('Load Base64 Data Fail')
 
         self.base64_bytes_img = base64_bytes_img  # 保存base64源文件(bytes)
-        self.mat_img = base642mat(base64_bytes_img)  # base64转换为mat
+        # self.mat_img = base642mat(base64_bytes_img)  # base64转换为mat
+        self.mat_img = cv.resize(base642mat(base64_bytes_img),(480,640), interpolation = cv.INTER_NEAREST)
 
     #利用捕捉的类型头编码
     def mat2base64_no_header(self):

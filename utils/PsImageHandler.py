@@ -118,41 +118,50 @@ def get_ps_process(mat_img , mode):
 
 #ps端图像处理对象,调用opencv库,默认内部mat
 def nogen_get_gray_matimage(mat_img):
+    _time_start=time.time()
     gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
-    return gray
+    return gray,time.time()-_time_start
 
 def nogen_get_gaussian_blur_matimage(mat_img):
+    _time_start=time.time()
     gaussian = cv.GaussianBlur(mat_img, (9,9), 0)
-    return gaussian
+    return gaussian,time.time()-_time_start
 
 def nogen_get_sobel_filter(mat_img):
+    _time_start=time.time()
     gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
     sobel_x = cv.filter2D(mat_img, -1, sobel_kernal_x)  # ddepth=-1表示相同深度
     sobel_y = cv.filter2D(mat_img, -1, sobel_kernal_y)  # ddepth=-1表示相同深度
-    return sobel_y+sobel_x
+    return sobel_y+sobel_x,time.time()-_time_start
 
 def nogen_get_sharpen_filter(mat_img):
+    _time_start=time.time()
     # gray = cv.cvtColor(mat_img, cv.COLOR_BGR2GRAY)
     _sharpen = cv.filter2D(mat_img, -1, laplace_kernal)  # ddepth=-1表示相同深度
-    return _sharpen
+    return _sharpen,time.time()-_time_start
 
 def nogen_get_canny(mat_img):
+    _time_start=time.time()
     _canny = cv.Canny(mat_img, 50,80)
-    return _canny
+    return _canny,time.time()-_time_start
 
 def nogen_get_erode(mat_img):
+    _time_start=time.time()
     _erosion = cv.erode(mat_img,np.ones((5,5),np.uint8),iterations = 1)
-    return _erosion
+    return _erosion,time.time()-_time_start
 
 def nogen_get_dilate(mat_img):
+    _time_start=time.time()
     _dilate = cv.dilate(mat_img,np.ones((5,5),np.uint8),iterations = 1)
-    return _dilate
+    return _dilate,time.time()-_time_start
 
 def nogen_get_median(mat_img):
+    _time_start=time.time()
     _median = cv.medianBlur(mat_img,5)
-    return _median
+    return _median,time.time()-_time_start
 
 def nogen_get_negative(mat_img):
+    _time_start=time.time()
     b,g,r=cv.split(mat_img)
     b=255-b
     g=255-g
@@ -160,34 +169,34 @@ def nogen_get_negative(mat_img):
     mat_img[:,:,0]=b
     mat_img[:,:,1]=g
     mat_img[:,:,2]=r
-    return mat_img
+    return mat_img,time.time()-_time_start
 
 def nogen_get_ps_process(mat_img , mode):
     # time.sleep(0.05)
-    time_start=time.time()
+    process_time=-1;
     if mode == 'Gray':#gray
-        processed_future = nogen_get_gray_matimage(mat_img)
+        processed_image,process_time = nogen_get_gray_matimage(mat_img)
     elif mode == 'Original':#original
-        processed_future = mat_img
+        processed_image = mat_img
     elif mode == 'Gaussian':#Gaussian
-        processed_future = nogen_get_gaussian_blur_matimage(mat_img)
+        processed_image,process_time = nogen_get_gaussian_blur_matimage(mat_img)
     elif mode == 'Sharpen':
-        processed_future = nogen_get_sharpen_filter(mat_img)
+        processed_image,process_time = nogen_get_sharpen_filter(mat_img)
     elif mode == 'Sobel':#Sobel
-        processed_future = nogen_get_sobel_filter(mat_img)
+        processed_image,process_time = nogen_get_sobel_filter(mat_img)
     elif mode == 'Canny':
-        processed_future = nogen_get_canny(mat_img)
+        processed_image,process_time = nogen_get_canny(mat_img)
     elif mode == 'Dilate':
-        processed_future = nogen_get_dilate(mat_img)
+        processed_image,process_time = nogen_get_dilate(mat_img)
     elif mode == 'Erode':
-        processed_future = nogen_get_erode(mat_img)
+        processed_image,process_time = nogen_get_erode(mat_img)
     elif mode == 'Negative':
-        processed_future = nogen_get_negative(mat_img)
+        processed_image,process_time = nogen_get_negative(mat_img)
     elif mode == 'Median':
-        processed_future = nogen_get_median(mat_img)
+        processed_image,process_time = nogen_get_median(mat_img)
     else:
-        processed_future = nogen_get_gray_matimage(mat_img)
-    return processed_future,time.time()-time_start
+        processed_image,process_time = nogen_get_gray_matimage(mat_img)
+    return processed_image,process_time
 
 
 class PsImageHandler():

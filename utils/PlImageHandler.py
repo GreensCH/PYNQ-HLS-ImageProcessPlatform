@@ -178,17 +178,16 @@ class my_image_processor:
 
     def nogen_median_write_read(self,plt_image):
         self.medianblur_frame[:]=plt_image#np.array(plt_image)#original_plt_image#np.array(original_image)
+        _time_start=time.time()
         self.medianblur_process_vdma.writechannel.writeframe(self.medianblur_frame)
-        # future = Future()
         _out_frame = self.medianblur_process_vdma.readchannel.readframe()
-        raise cv.cvtColor(_out_frame,cv.COLOR_RGB2BGR)
+        return cv.cvtColor(_out_frame,cv.COLOR_RGB2BGR),time.time()-_time_start
     def nogen_write_read(self,plt_image):
         self.image_frame[:]=plt_image#np.array(plt_image)#original_plt_image#np.array(original_image)
+        _time_start=time.time()
         self.image_process_vdma.writechannel.writeframe(self.image_frame)
-        # future = Future()
         _out_frame = self.image_process_vdma.readchannel.readframe()
-        # future.set_result(cv.cvtColor(_out_frame,cv.COLOR_RGB2BGR))
-        return cv.cvtColor(_out_frame,cv.COLOR_RGB2BGR)
+        return cv.cvtColor(_out_frame,cv.COLOR_RGB2BGR),time.time()-_time_start
 
     @gen.coroutine
     def median_write_read(self,plt_image):
@@ -256,7 +255,7 @@ def reload_ip_mode():
 
 def modify_pl_image_processor(mode=0):
     image_process.modify_mode(pl_methods_dict[mode])
-def modify_pl_image_processor2(mode=0):
+def modify_pl_image_processor_modenumber(mode=0):
     image_process.modify_mode(mode)
 def modify_size_pl_image_processor(height,width):
     image_process.modify_size(height=height,width=width)
@@ -293,15 +292,10 @@ def get_pl_process(plt_image,mode,height,width):
 
 def nogen_get_pl_process(plt_image,mode,height,width):
     #转换成fpga可识别的mode
-    time_start=time.time()
-    original_mode=get_pl_mode()
-    modify_size_pl_image_processor(height=height,width=width)
-    modify_pl_image_processor(mode)
+    process_time=-1;
     if(mode!='Median'):
-        processed_future =  image_process.nogen_write_read(plt_image)
+        processed_image,process_time =  image_process.nogen_write_read(plt_image)
     else:
-        processed_future =  image_process.nogen_median_write_read(plt_image)
-    # processed_future = yield image_process.write_read(plt_image)
-    modify_pl_image_processor2(original_mode)
-    return processed_future,time.time()-time_start
+        processed_image,process_time =  image_process.nogen_median_write_read(plt_image)
+    return processed_image,process_time
 
